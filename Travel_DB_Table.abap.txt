@@ -1,0 +1,22 @@
+@EndUserText.label : 'TRAVEL BOOKING TABLE'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table ztravel_app_aa {
+
+  key client      : abap.clnt not null;
+  key travel_id   : /dmo/travel_id not null;
+  agency_id       : /dmo/agency_id;
+  customer_id     : /dmo/customer_id;
+  begin_date      : /dmo/begin_date;
+  end_date        : /dmo/end_date;
+  @Semantics.amount.currencyCode : 'ztravel_app_aa.currency_code'
+  booking_fee     : /dmo/booking_fee;
+  @Semantics.amount.currencyCode : 'ztravel_app_aa.currency_code'
+  total_price     : abap.curr(15,2);
+  currency_code   : /dmo/currency_code;
+  overall_status  : /dmo/overall_status;
+  last_changed_at : timestampl;
+
+}

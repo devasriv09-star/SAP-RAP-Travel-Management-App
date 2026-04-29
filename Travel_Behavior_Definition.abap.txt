@@ -1,0 +1,39 @@
+managed implementation in class zbp_i_travel_aa unique;
+strict ( 2 );
+
+define behavior for Z_I_TRAVEL_AA alias Travel//alias Travel
+persistent table ztravel_app_aa
+lock master
+authorization master ( none )
+early numbering
+{
+  create;
+  update;
+  delete;
+
+ validation validateDates on save {create; field Begin_Date, End_Date; }
+
+action acceptTravel result [1] $self;
+action rejectTravel result [1] $self;
+
+  field ( readonly ) travel_id, total_price;
+  field ( mandatory ) agency_id, customer_id;
+  field ( readonly ) last_changed_at;
+
+
+determination calculateTotalPrice on modify { field booking_fee, currency_code; }
+
+  mapping for ztravel_app_aa
+  {
+    travel_id = travel_id;
+    agency_id = agency_id;
+    customer_id = customer_id;
+    begin_date = begin_date;
+    end_date = end_date;
+    booking_fee = booking_fee;
+    total_price = total_price;
+    currency_code = currency_code;
+    overall_status = overall_status;
+    last_changed_at = last_changed_at;
+  }
+}

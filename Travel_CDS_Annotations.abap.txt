@@ -1,0 +1,66 @@
+@AbapCatalog.viewEnhancementCategory: [#PROJECTION_LIST]
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Travel Interface view'
+@Metadata.ignorePropagatedAnnotations: true
+@ObjectModel.usageType:{
+    serviceQuality: #X,
+    sizeCategory: #S,
+    dataClass: #MIXED
+}
+
+/* UI Annotations added below */
+@UI.headerInfo: { typeName: 'Travel', typeNamePlural: 'Travels' }
+
+define root view entity Z_I_TRAVEL_AA
+  as select from ztravel_app_aa
+{
+      @UI.facet: [ { id: 'Travel',  purpose: #STANDARD,  type: #IDENTIFICATION_REFERENCE, label: 'Travel Details', position: 10 } ]
+
+      @UI: { lineItem: [ { position: 10 } ], identification: [ { position: 10 } ] }
+  key travel_id,
+  
+      @UI: { lineItem: [ { position: 20 } ], identification: [ { position: 20 } ] }
+      agency_id,
+      
+      @UI: { lineItem: [ { position: 30 } ], identification: [ { position: 30 } ] }
+      customer_id,
+      
+      @UI: { lineItem: [ { position: 40 } ], identification: [ { position: 40 } ] }
+      begin_date,
+      
+      @UI: { lineItem: [ { position: 50 } ], identification: [ { position: 50 } ] }
+      end_date,
+      
+      @Semantics.amount.currencyCode: 'currency_code'
+      @UI: { lineItem: [ { position: 60 } ], identification: [ { position: 60 } ] }
+      booking_fee,
+      
+      @Semantics.amount.currencyCode: 'currency_code'
+      @UI: { lineItem: [ { position: 65 } ], identification: [ { position: 65 } ] }
+      total_price as total_price,  // <--- Database field 'as' Alias name
+      
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'I_Currency', element: 'Currency' } }]
+      @UI: { lineItem: [ { position: 70 } ], identification: [ { position: 70 } ] }
+      currency_code,
+      
+
+      case overall_status
+        when 'A' then 3      -- 3 = Green
+        when 'R' then 1      -- 1 = Red
+        when 'O' then 2      -- 2 = Yellow
+        else 0               
+      end as OverallStatusCriticality,
+
+     
+      @UI: { lineItem:       [ { position: 80, criticality: 'OverallStatusCriticality' }, -- Idhi add chey
+                               { type: #FOR_ACTION, dataAction: 'acceptTravel', label: 'Approve' },
+                               { type: #FOR_ACTION, dataAction: 'rejectTravel', label: 'Reject' } ],
+             identification: [ { position: 80, criticality: 'OverallStatusCriticality' }, -- Idhi add chey
+                               { type: #FOR_ACTION, dataAction: 'acceptTravel', label: 'Approve' },
+                               { type: #FOR_ACTION, dataAction: 'rejectTravel', label: 'Reject' } ] }
+      overall_status,
+      
+      @Semantics.systemDateTime.lastChangedAt: true
+      last_changed_at
+
+}

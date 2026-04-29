@@ -1,0 +1,102 @@
+    CLASS lhc_travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
+  PRIVATE SECTION.
+    METHODS earlynumbering_create FOR NUMBERING
+      IMPORTING entities FOR CREATE Travel.
+
+    METHODS calculateTotalPrice FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR Travel~calculateTotalPrice.
+
+    METHODS validateDates FOR VALIDATE ON SAVE
+      IMPORTING keys FOR Travel~validateDates.
+
+ " ACTION keyword ki badhalu FOR MODIFY vaadi chudu mama
+    METHODS acceptTravel FOR MODIFY
+      IMPORTING keys FOR ACTION Travel~acceptTravel RESULT result.
+
+    METHODS rejectTravel FOR MODIFY
+      IMPORTING keys FOR ACTION Travel~rejectTravel RESULT result.
+
+
+     ENDCLASS.
+
+CLASS lhc_travel IMPLEMENTATION.
+
+  METHOD earlynumbering_create.
+    DATA: max_travel_id TYPE ztravel_app_aa-travel_id.
+    SELECT MAX( travel_id ) FROM ztravel_app_aa INTO @max_travel_id.
+    LOOP AT entities ASSIGNING FIELD-SYMBOL(<travel>).
+      max_travel_id += 1.
+      APPEND VALUE #( %cid      = <travel>-%cid
+                      travel_id = max_travel_id ) TO mapped-travel.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD calculateTotalPrice.
+    READ ENTITIES OF Z_I_TRAVEL_AA IN LOCAL MODE
+      ENTITY Travel
+        FIELDS ( booking_fee ) WITH CORRESPONDING #( keys )
+      RESULT DATA(travels).
+
+    MODIFY ENTITIES OF Z_I_TRAVEL_AA IN LOCAL MODE
+      ENTITY Travel
+        UPDATE FIELDS ( total_price last_changed_at )
+        WITH VALUE #( FOR travel IN travels (
+                           %tky            = travel-%tky
+                           total_price     = travel-booking_fee + 100
+                           last_changed_at = cl_abap_context_info=>get_system_time( )
+                        ) )
+      REPORTED DATA(lt_reported).
+  ENDMETHOD.
+
+  METHOD validateDates.
+    READ ENTITIES OF Z_I_TRAVEL_AA IN LOCAL MODE
+      ENTITY Travel
+        FIELDS ( Begin_Date End_Date ) WITH CORRESPONDING #( keys )
+      RESULT DATA(travels).
+
+    LOOP AT travels INTO DATA(travel).
+      IF travel-End_Date < travel-Begin_Date.
+        APPEND VALUE #( %tky = travel-%tky ) TO failed-travel.
+        APPEND VALUE #( %tky = travel-%tky
+                        %msg = new_message_with_text(
+                                 severity = if_abap_behv_message=>severity-error
+                                 text     = 'End Date cannot be before Begin Date!' )
+                      ) TO reported-travel.
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD acceptTravel.
+    MODIFY ENTITIES OF Z_I_TRAVEL_AA IN LOCAL MODE
+      ENTITY Travel
+        UPDATE FIELDS ( overall_status last_changed_at )
+        WITH VALUE #( FOR key IN keys ( %tky            = key-%tky
+                                         overall_status  = 'A'
+                                         last_changed_at = cl_abap_context_info=>get_system_time( ) ) )
+      FAILED failed
+      REPORTED reported.
+
+    READ ENTITIES OF Z_I_TRAVEL_AA IN LOCAL MODE
+      ENTITY Travel ALL FIELDS WITH CORRESPONDING #( keys )
+      RESULT DATA(travels).
+    result = VALUE #( FOR travel IN travels ( %tky = travel-%tky %param = travel ) ).
+  ENDMETHOD.
+
+  METHOD rejectTravel.
+    MODIFY ENTITIES OF Z_I_TRAVEL_AA IN LOCAL MODE
+      ENTITY Travel
+        UPDATE FIELDS ( overall_status last_changed_at )
+        WITH VALUE #( FOR key IN keys ( %tky            = key-%tky
+                                         overall_status  = 'R'
+                                         last_changed_at = cl_abap_context_info=>get_system_time( ) ) )
+      FAILED failed
+      REPORTED reported.
+
+    READ ENTITIES OF Z_I_TRAVEL_AA IN LOCAL MODE
+      ENTITY Travel ALL FIELDS WITH CORRESPONDING #( keys )
+      RESULT DATA(travels).
+    result = VALUE #( FOR travel IN travels ( %tky = travel-%tky %param = travel ) ).
+  ENDMETHOD.
+
+
+ENDCLASS.
